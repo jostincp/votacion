@@ -1,0 +1,13 @@
+{
+  "name": "votacion-halloween",
+  "version": "1.0.0",
+  "description": "Página de votación temática de Halloween",
+  "main": "index.html",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "mysql2": "^3.6.5"
+  }
+}

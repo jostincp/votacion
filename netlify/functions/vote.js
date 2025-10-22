@@ -1,5 +1,14 @@
-const fs = require('fs');
-const path = require('path');
+const mysql = require('mysql2/promise');
+
+const dbConfig = {
+  host: 'modulotest085.mysql.db',
+  user: 'modulotest085_usr',
+  password: 'sXcELVoz2s',
+  database: 'modulotest085',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+};
 
 exports.handler = async (event, context) => {
   // Habilitar CORS
@@ -19,16 +28,55 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Solo permitir POST
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Método no permitido' })
-    };
-  }
+  let connection;
 
   try {
+    // Conectar a la base de datos
+    connection = await mysql.createConnection(dbConfig);
+
+    // Crear tabla si no existe
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS halloween_votes (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        theme VARCHAR(50) NOT NULL UNIQUE,
+        votes INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Si es GET, devolver todos los votos
+    if (event.httpMethod === 'GET') {
+      const [rows] = await connection.execute('SELECT theme, votes FROM halloween_votes');
+      const votes = {};
+      rows.forEach(row => {
+        votes[row.theme] = row.votes;
+      });
+
+      // Asegurar que todos los temas estén presentes
+      const allThemes = ['La purga', 'F1', 'Hombres de negro', 'Oxxo', 'Minecraft'];
+      allThemes.forEach(theme => {
+        if (!(theme in votes)) {
+          votes[theme] = 0;
+        }
+      });
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify(votes)
+      };
+    }
+
+    // Solo permitir POST para votar
+    if (event.httpMethod !== 'POST') {
+      return {
+        statusCode: 405,
+        headers,
+        body: JSON.stringify({ error: 'Método no permitido' })
+      };
+    }
+
     const { theme } = JSON.parse(event.body);
 
     // Validar que el tema sea válido
@@ -41,21 +89,26 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Ruta al archivo de votos (en el directorio del proyecto)
-    const votesFile = path.join(process.cwd(), 'votes.json');
+    // Insertar o actualizar el voto
+    await connection.execute(`
+      INSERT INTO halloween_votes (theme, votes)
+      VALUES (?, 1)
+      ON DUPLICATE KEY UPDATE votes = votes + 1
+    `, [theme]);
 
-    // Leer votos existentes
-    let votes = {};
-    if (fs.existsSync(votesFile)) {
-      const data = fs.readFileSync(votesFile, 'utf8');
-      votes = JSON.parse(data);
-    }
+    // Obtener todos los votos actualizados
+    const [rows] = await connection.execute('SELECT theme, votes FROM halloween_votes');
+    const votes = {};
+    rows.forEach(row => {
+      votes[row.theme] = row.votes;
+    });
 
-    // Incrementar el voto
-    votes[theme] = (votes[theme] || 0) + 1;
-
-    // Guardar votos actualizados
-    fs.writeFileSync(votesFile, JSON.stringify(votes, null, 2));
+    // Asegurar que todos los temas estén presentes
+    validThemes.forEach(theme => {
+      if (!(theme in votes)) {
+        votes[theme] = 0;
+      }
+    });
 
     return {
       statusCode: 200,
@@ -68,7 +121,11 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Error interno del servidor' })
+      body: JSON.stringify({ error: 'Error interno del servidor: ' + error.message })
     };
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
   }
 };
