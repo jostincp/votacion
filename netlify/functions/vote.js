@@ -1,10 +1,11 @@
 const mysql = require('mysql2/promise');
 
 const dbConfig = {
-  host: 'modulotest085.mysql.db',
-  user: 'modulotest085_usr',
-  password: 'sXcELVoz2s',
-  database: 'modulotest085',
+  host: process.env.DB_HOST || 'modulotest085.mysql.db',
+  user: process.env.DB_USER || 'modulotest085_usr',
+  password: process.env.DB_PASSWORD || 'sXcELVoz2s',
+  database: process.env.DB_NAME || 'modulotest085',
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
@@ -121,7 +122,7 @@ exports.handler = async (event, context) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Error interno del servidor: ' + error.message })
+      body: JSON.stringify({ error: 'Error interno del servidor' })
     };
   } finally {
     if (connection) {
