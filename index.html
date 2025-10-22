@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votación Temática de Halloween</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Votación Temática de Halloween</h1>
+    </header>
+    <main>
+        <form id="voting-form">
+            <div class="options">
+                <div class="option-card">
+                    <input type="radio" id="purga" name="theme" value="La purga">
+                    <label for="purga">
+                        <span class="icon">👻</span>
+                        <span class="name">La purga</span>
+                    </label>
+                </div>
+                <div class="option-card">
+                    <input type="radio" id="f1" name="theme" value="F1">
+                    <label for="f1">
+                        <span class="icon">🏎️</span>
+                        <span class="name">F1</span>
+                    </label>
+                </div>
+                <div class="option-card">
+                    <input type="radio" id="hombres-negro" name="theme" value="Hombres de negro">
+                    <label for="hombres-negro">
+                        <span class="icon">👽</span>
+                        <span class="name">Hombres de negro</span>
+                    </label>
+                </div>
+                <div class="option-card">
+                    <input type="radio" id="oxxo" name="theme" value="Oxxo">
+                    <label for="oxxo">
+                        <span class="icon">🏪</span>
+                        <span class="name">Oxxo</span>
+                    </label>
+                </div>
+                <div class="option-card">
+                    <input type="radio" id="minecraft" name="theme" value="Minecraft">
+                    <label for="minecraft">
+                        <span class="icon">⛏️</span>
+                        <span class="name">Minecraft</span>
+                    </label>
+                </div>
+            </div>
+            <button type="submit" id="vote-btn">Votar</button>
+        </form>
+        <div id="confirmation" class="hidden">
+            <p>¡Gracias por votar! Tu selección ha sido registrada.</p>
+        </div>
+        <div id="results">
+            <h2>Resultados en Tiempo Real</h2>
+            <ul id="vote-counts">
+                <li>La purga: <span id="count-purga">0</span></li>
+                <li>F1: <span id="count-f1">0</span></li>
+                <li>Hombres de negro: <span id="count-hombres-negro">0</span></li>
+                <li>Oxxo: <span id="count-oxxo">0</span></li>
+                <li>Minecraft: <span id="count-minecraft">0</span></li>
+            </ul>
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>
