@@ -10,19 +10,19 @@ const voteCounts = {
     'Minecraft': document.getElementById('count-minecraft')
 };
 
-// Load existing votes from localStorage
-function loadVotes() {
-    const storedVotes = JSON.parse(localStorage.getItem('halloweenVotes')) || {};
-    Object.keys(voteCounts).forEach(theme => {
-        const count = storedVotes[theme] || 0;
-        voteCounts[theme].textContent = count;
-    });
-    return storedVotes;
-}
-
-// Save votes to localStorage
-function saveVotes(votes) {
-    localStorage.setItem('halloweenVotes', JSON.stringify(votes));
+// Load existing votes from server
+async function loadVotes() {
+    try {
+        const response = await fetch('/.netlify/functions/vote');
+        if (response.ok) {
+            const votes = await response.json();
+            updateVoteCounts(votes);
+            return votes;
+        }
+    } catch (error) {
+        console.error('Error cargando votos:', error);
+    }
+    return {};
 }
 
 // Update vote counts display
@@ -33,36 +33,57 @@ function updateVoteCounts(votes) {
 }
 
 // Handle form submission
-votingForm.addEventListener('submit', function(e) {
+votingForm.addEventListener('submit', async function(e) {
     e.preventDefault();
-    
+
     const selectedTheme = document.querySelector('input[name="theme"]:checked');
-    
+
     if (!selectedTheme) {
         alert('Por favor, selecciona una opción antes de votar.');
         return;
     }
-    
+
     const theme = selectedTheme.value;
-    const votes = loadVotes();
-    
-    // Increment vote count
-    votes[theme] = (votes[theme] || 0) + 1;
-    
-    // Save and update display
-    saveVotes(votes);
-    updateVoteCounts(votes);
-    
-    // Show confirmation message
-    confirmation.classList.remove('hidden');
-    
-    // Reset form
-    votingForm.reset();
-    
-    // Hide confirmation after 3 seconds
-    setTimeout(() => {
-        confirmation.classList.add('hidden');
-    }, 3000);
+
+    // Disable button during submission
+    voteBtn.disabled = true;
+    voteBtn.textContent = 'Enviando...';
+
+    try {
+        const response = await fetch('/.netlify/functions/vote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ theme })
+        });
+
+        if (response.ok) {
+            const votes = await response.json();
+            updateVoteCounts(votes);
+
+            // Show confirmation message
+            confirmation.classList.remove('hidden');
+
+            // Reset form
+            votingForm.reset();
+
+            // Hide confirmation after 3 seconds
+            setTimeout(() => {
+                confirmation.classList.add('hidden');
+            }, 3000);
+        } else {
+            const error = await response.json();
+            alert('Error al enviar el voto: ' + (error.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error enviando voto:', error);
+        alert('Error de conexión. Inténtalo de nuevo.');
+    } finally {
+        // Re-enable button
+        voteBtn.disabled = false;
+        voteBtn.textContent = 'Votar';
+    }
 });
 
 // Load votes on page load
